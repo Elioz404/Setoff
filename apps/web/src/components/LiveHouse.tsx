@@ -37,7 +37,14 @@ export function LiveHouse({ deployment }: { readonly deployment: Deployment }) {
 function LiveView({ deployment, state, error }: { readonly deployment: Deployment; readonly state: LiveState; readonly error?: string }) {
   const [preview, setPreview] = useState(false);
   const { decimals, symbol } = deployment.token;
-  const names = useMemo(() => new Map(deployment.firms.map((f) => [f.account, f.name])), [deployment.firms]);
+  const names = useMemo(
+    () =>
+      new Map([
+        ...deployment.firms.map((f): [string, string] => [f.account, f.name]),
+        ...deployment.solvers.map((s): [string, string] => [s.account, `${s.strategy[0]!.toUpperCase()}${s.strategy.slice(1)} solver`]),
+      ]),
+    [deployment.firms, deployment.solvers],
+  );
   const label = (account: string) => names.get(account) ?? account;
   const amount = (value: bigint | string) => `${formatAmount(BigInt(value), decimals)} ${symbol}`;
 

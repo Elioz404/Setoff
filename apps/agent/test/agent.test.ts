@@ -75,6 +75,9 @@ describe("loadConfig", () => {
     const other = JSON.stringify({ account_id: "someone.testnet", private_key: key });
     assert.throws(() => loadConfig({ ...rest, SOLVER_KEY_FILE: "k.json" }, () => other), /not the key of solver.testnet/);
     assert.throws(() => loadConfig(rest), new ConfigError("set SOLVER_KEY_FILE or SOLVER_PRIVATE_KEY"));
+    const unnamed = JSON.stringify({ private_key: key });
+    assert.equal(loadConfig({ ...rest, SOLVER_KEY_FILE: "keys/solver.testnet.json" }, () => unnamed).privateKey, key);
+    assert.throws(() => loadConfig({ ...rest, SOLVER_KEY_FILE: "keys/other.testnet.json" }, () => unnamed), ConfigError);
   });
 
   it("refuses a malformed key and unknown strategies", () => {

@@ -1,11 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 
 import { KeyPairEd25519, type KeyPairString } from "near-api-js";
 
-/** A key file in the format near-cli writes to ~/.near-credentials/<network>/. */
+/**
+ * A key file in the format near-cli writes to ~/.near-credentials/<network>/.
+ * near-cli-rs leaves out `account_id` and names the file after the account.
+ */
 interface KeyFile {
-  readonly account_id: string;
+  readonly account_id?: string;
   readonly public_key: string;
   readonly private_key: KeyPairString;
 }
@@ -39,9 +42,7 @@ export class KeyStore {
   read(accountId: string): KeyPairString | undefined {
     const path = this.path(accountId);
     if (!existsSync(path)) return undefined;
-    const file = JSON.parse(readFileSync(path, "utf8")) as KeyFile;
-    if (file.account_id !== accountId) throw new Error(`${path} holds the key of ${file.account_id}`);
-    return file.private_key;
+    return keyOf(path, accountId);
   }
 
   private path(accountId: string): string {
@@ -56,7 +57,16 @@ export function isInside(path: string, dir: string): boolean {
 
 /** Reads the private key from a near-cli key file. */
 export function readKeyFile(path: string, accountId: string): KeyPairString {
+  return keyOf(path, accountId);
+}
+
+/**
+ * The private key in a key file, after checking the file belongs to
+ * `accountId`: by its `account_id` field, or by its name when it has none.
+ */
+function keyOf(path: string, accountId: string): KeyPairString {
   const file = JSON.parse(readFileSync(path, "utf8")) as KeyFile;
-  if (file.account_id !== accountId) throw new Error(`${path} is the key of ${file.account_id}, not ${accountId}`);
+  const owner = file.account_id ?? (basename(path) === `${accountId}.json` ? accountId : undefined);
+  if (owner !== accountId) throw new Error(`${path} is not the key of ${accountId}`);
   return file.private_key;
 }

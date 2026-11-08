@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { basename } from "node:path";
 
 import type { KeyPairString } from "near-api-js";
 
@@ -65,7 +66,9 @@ export function loadConfig(
 function keyFromFile(path: string | undefined, accountId: string, readFile: (path: string) => string): string {
   if (!path) throw new ConfigError("set SOLVER_KEY_FILE or SOLVER_PRIVATE_KEY");
   const file = JSON.parse(readFile(path)) as { account_id?: string; private_key?: string };
-  if (file.account_id !== accountId) throw new ConfigError(`${path} is not the key of ${accountId}`);
+  // near-cli-rs leaves out account_id and names the file after the account.
+  const owner = file.account_id ?? (basename(path) === `${accountId}.json` ? accountId : undefined);
+  if (owner !== accountId) throw new ConfigError(`${path} is not the key of ${accountId}`);
   if (!file.private_key) throw new ConfigError(`${path} has no private_key`);
   return file.private_key;
 }
