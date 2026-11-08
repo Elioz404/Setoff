@@ -4,6 +4,9 @@ A clearing house for invoices between firms, on NEAR. Firms record what they owe
 debt that runs in cycles; a contract accepts a cancellation only if no firm's net position changes; what is left is paid
 in a NEP-141 stablecoin. Built at NEAR HACKATHON (November 2026). Runs on NEAR testnet with a test token that has no value.
 
+Live page: https://elioz404.github.io/Setoff/ (the demo clearing, the solver comparison, and the house on testnet read
+from its contract).
+
 ## The problem
 
 Small firms extend each other credit all the time: the bakery owes the mill, the mill owes the farm, the farm owes the
