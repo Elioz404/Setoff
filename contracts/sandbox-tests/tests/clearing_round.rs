@@ -15,11 +15,12 @@ const BOND: NearToken = NearToken::from_millinear(100);
 const ONE_YOCTO: NearToken = NearToken::from_yoctonear(1);
 const GAS: Gas = Gas::from_tgas(100);
 
+/// Reads a built contract. `SETOFF_WASM_DIR`, when relative, is taken from the
+/// workspace root, the directory the README's commands run in.
 fn wasm(name: &str) -> Vec<u8> {
-    let dir = std::env::var("SETOFF_WASM_DIR").map_or_else(
-        |_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/wasm32-unknown-unknown/release"),
-        PathBuf::from,
-    );
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let dir = std::env::var("SETOFF_WASM_DIR")
+        .map_or_else(|_| root.join("target/wasm32-unknown-unknown/release"), |dir| root.join(dir));
     let path = dir.join(name);
     std::fs::read(&path)
         .unwrap_or_else(|_| panic!("{} is missing: run scripts/build-contracts.sh first", path.display()))
