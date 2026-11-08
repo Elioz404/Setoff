@@ -37,9 +37,12 @@ export class HouseWriter {
     return this.call<string>("issue", { debtor, asset, amount: amount.toString(), reference }, this.deposits.storage);
   }
 
-  /** Admits firms as members; only the house's owner may call it. */
+  /**
+   * Admits firms as members; only the house's owner may call it. Attaches the
+   * storage deposit once per account, and the contract refunds what is left.
+   */
   async admit(accounts: readonly string[]): Promise<void> {
-    await this.call("admit", { accounts }, this.deposits.storage);
+    await this.call("admit", { accounts }, this.deposits.storage * BigInt(accounts.length));
   }
 
   async accept(id: string): Promise<void> {

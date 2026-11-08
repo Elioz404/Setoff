@@ -1,10 +1,13 @@
 {
   "network": "testnet",
-  "rpcUrl": "https://test.rpc.fastnear.com",
+  "rpcUrls": [
+    "https://test.rpc.fastnear.com",
+    "https://rpc.testnet.near.org"
+  ],
   "scenario": "Eight small firms in one supply chain",
-  "house": "house.setoff-demo.testnet",
+  "house": "house.setoff.testnet",
   "token": {
-    "account": "tusd.setoff-demo.testnet",
+    "account": "tusd.setoff.testnet",
     "symbol": "tUSD",
     "decimals": 6
   },
@@ -13,66 +16,66 @@
       "id": "molino",
       "name": "Molino Andino",
       "trade": "flour mill",
-      "account": "molino.setoff-demo.testnet"
+      "account": "molino.setoff.testnet"
     },
     {
       "id": "panaderia",
       "name": "Panaderia Sol",
       "trade": "bakery",
-      "account": "panaderia.setoff-demo.testnet"
+      "account": "panaderia.setoff.testnet"
     },
     {
       "id": "granja",
       "name": "Granja La Esperanza",
       "trade": "wheat farm",
-      "account": "granja.setoff-demo.testnet"
+      "account": "granja.setoff.testnet"
     },
     {
       "id": "transportes",
       "name": "Transportes Ruta 5",
       "trade": "haulage",
-      "account": "transportes.setoff-demo.testnet"
+      "account": "transportes.setoff.testnet"
     },
     {
       "id": "empaques",
       "name": "Empaques del Sur",
       "trade": "packaging",
-      "account": "empaques.setoff-demo.testnet"
+      "account": "empaques.setoff.testnet"
     },
     {
       "id": "imprenta",
       "name": "Imprenta Lux",
       "trade": "label printer",
-      "account": "imprenta.setoff-demo.testnet"
+      "account": "imprenta.setoff.testnet"
     },
     {
       "id": "cafe",
       "name": "Cafe Central",
       "trade": "cafe chain",
-      "account": "cafe.setoff-demo.testnet"
+      "account": "cafe.setoff.testnet"
     },
     {
       "id": "distribuidora",
       "name": "Distribuidora Norte",
       "trade": "wholesaler",
-      "account": "distribuidora.setoff-demo.testnet"
+      "account": "distribuidora.setoff.testnet"
     }
   ],
   "solvers": [
     {
       "id": "solver-greedy",
       "strategy": "greedy",
-      "account": "solver-greedy.setoff-demo.testnet"
+      "account": "solver-greedy.setoff.testnet"
     },
     {
       "id": "solver-optimal",
       "strategy": "optimal",
-      "account": "solver-optimal.setoff-demo.testnet"
+      "account": "solver-optimal.setoff.testnet"
     }
   ],
   "codeHashes": {
-    "house": "6iKSEgVwfn5kBoL1mgLpZFLppg9k7RnTe7WYmSjaKb7X",
-    "token": "88umVdbGU34WL6K6TmwWPXhrVoDrQbrsaDouugqzp2qn"
+    "house": "6AXb24nQhZuQwgVrQ41h5cvQnj421j5FLJFsRDjJdaoE",
+    "token": "BJo5QGyLZz2RASjkuP5fhmmMJY7Nz91mPSBiVPaNbE2M"
   },
   "obligations": [
     "0",

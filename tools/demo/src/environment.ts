@@ -4,6 +4,9 @@ import { fileURLToPath } from "node:url";
 
 export const repositoryRoot = resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 
+/** Where `scripts/build-contracts.sh` leaves the wasm files. */
+export const defaultWasmDir = join(repositoryRoot, "target/wasm32-unknown-unknown/release");
+
 /** Public testnet RPC endpoints, tried in order. */
 export const TESTNET_RPC_URLS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"] as const;
 
@@ -39,7 +42,7 @@ export function loadEnvironment(env: Readonly<Record<string, string | undefined>
     rootKeyFile: env.SETOFF_ROOT_KEY_FILE?.trim() || join(homedir(), ".near-credentials", "testnet", `${rootAccount}.json`),
     keyDir: env.SETOFF_KEY_DIR?.trim() || join(homedir(), ".near-credentials", "testnet"),
     scenarioPath: resolve(env.SETOFF_SCENARIO?.trim() || join(repositoryRoot, "tools/demo/scenarios/supply-chain.json")),
-    wasmDir: resolve(env.SETOFF_WASM_DIR?.trim() || join(repositoryRoot, "target/wasm32-unknown-unknown/release")),
+    wasmDir: resolve(env.SETOFF_WASM_DIR?.trim() || defaultWasmDir),
     deploymentPath: resolve(env.SETOFF_DEPLOYMENT?.trim() || join(repositoryRoot, "deployments/testnet.json")),
   };
 }

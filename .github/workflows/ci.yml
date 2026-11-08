@@ -19,7 +19,7 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
-      - run: RUSTFLAGS="-C target-cpu=mvp -C link-arg=-s" cargo build --release --locked --target wasm32-unknown-unknown -p setoff-clearing-house -p setoff-test-token
+      - run: RUSTFLAGS="-C target-cpu=mvp -C link-arg=-s --cfg near" cargo build --release --locked --target wasm32-unknown-unknown -p setoff-clearing-house -p setoff-test-token
 
   typescript:
     runs-on: ubuntu-latest

@@ -23,7 +23,7 @@ export class Chain {
       await this.provider.viewAccount({ accountId });
       return true;
     } catch (error) {
-      if (error instanceof Error && /does not exist|UNKNOWN_ACCOUNT/i.test(error.message)) return false;
+      if (isMissingAccount(error)) return false;
       throw error;
     }
   }
@@ -49,6 +49,17 @@ export class Chain {
     await account.callFunction({ contractId: account.accountId, methodName: "new", args: init, gas: teraToGas(100) });
     return true;
   }
+}
+
+/**
+ * Whether an RPC error says the account does not exist. The failover provider
+ * wraps each endpoint's error in a list, so the answer may sit one level down.
+ */
+function isMissingAccount(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.name === "AccountDoesNotExistError" || /does not exist|UNKNOWN_ACCOUNT/i.test(error.message)) return true;
+  const nested = (error as Error & { errors?: unknown[] }).errors ?? [];
+  return nested.length > 0 && nested.every(isMissingAccount);
 }
 
 /** Base58 SHA-256 of a wasm file, the way NEAR reports code hashes. */
