@@ -1,6 +1,6 @@
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::IterableMap;
-use near_sdk::{env, near, require, AccountId, NearToken, Promise};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, Promise, PromiseError};
 use setoff_core::{
     validate_clearing, ClearingError, ClearingLimits, Obligation, ObligationSource, Reduction,
     ValidatedClearing,
@@ -9,6 +9,8 @@ use setoff_core::{
 use crate::events::Event;
 use crate::obligations::{ObligationStatus, StoredObligation};
 use crate::{storage, BalanceKey, ClearingHouse, ClearingHouseExt};
+
+const GAS_FOR_BOND_CALLBACK: Gas = Gas::from_tgas(5);
 
 /// One line of a proposal, as solvers send it.
 #[near(serializers = [json])]
@@ -95,7 +97,7 @@ impl ClearingHouse {
         storage::collect(&solver, bond);
 
         if let Some(outbid) = round.best.take() {
-            Promise::new(outbid.solver).transfer(outbid.bond).detach();
+            Self::return_bond(outbid.solver, outbid.bond);
         }
         if round.closes_at_ns.is_none() {
             let closes_at = now
@@ -144,7 +146,7 @@ impl ClearingHouse {
         let storage_cost = storage::cost(before, after);
         let refund = best.bond.saturating_sub(storage_cost);
         if !refund.is_zero() {
-            Promise::new(best.solver).transfer(refund).detach();
+            Self::return_bond(best.solver, refund);
         }
     }
 }
@@ -157,6 +159,19 @@ impl ClearingHouse {
             .get(asset)
             .and_then(|round| round.best.as_ref())
             .is_some_and(|best| best.reductions.iter().any(|&(obligation, _)| obligation == id))
+    }
+
+    /// Sends a bond back and records the outcome as an event, so a refund that
+    /// cannot be delivered (to an account deleted meanwhile) is on the record.
+    fn return_bond(solver: AccountId, amount: NearToken) {
+        Promise::new(solver.clone())
+            .transfer(amount)
+            .then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(GAS_FOR_BOND_CALLBACK)
+                    .on_bond_returned(solver, amount),
+            )
+            .detach();
     }
 
     pub(crate) fn round(&self, asset: &AccountId) -> Round {
@@ -202,5 +217,22 @@ impl ClearingHouse {
             self.credit(BalanceKey { account: solver.clone(), asset: asset.clone() }, reward);
         }
         reward
+    }
+}
+
+#[near]
+impl ClearingHouse {
+    #[private]
+    pub fn on_bond_returned(
+        &mut self,
+        solver: AccountId,
+        amount: NearToken,
+        #[callback_result] result: Result<(), PromiseError>,
+    ) {
+        if result.is_ok() {
+            Event::BondReturned { solver, amount }.emit();
+        } else {
+            Event::BondReturnFailed { solver, amount }.emit();
+        }
     }
 }

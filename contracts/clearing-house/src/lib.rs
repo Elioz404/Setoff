@@ -100,6 +100,20 @@ impl ClearingHouse {
         house
     }
 
+    /// Hands the owner's role (admitting members, adding tokens) to another
+    /// account, typically a DAO. Needs the owner's full-access key: a 1
+    /// yoctoNEAR deposit cannot be attached through a function-call key.
+    #[payable]
+    pub fn transfer_ownership(&mut self, new_owner: AccountId) {
+        self.require_owner();
+        require!(
+            env::attached_deposit() == near_sdk::NearToken::from_yoctonear(1),
+            "attach exactly 1 yoctoNEAR"
+        );
+        let from = std::mem::replace(&mut self.owner, new_owner.clone());
+        events::Event::OwnershipTransferred { from, to: new_owner }.emit();
+    }
+
     /// Accepts obligations in one more NEP-141 token. Only the owner can call
     /// it, and pays for the storage it adds.
     #[payable]

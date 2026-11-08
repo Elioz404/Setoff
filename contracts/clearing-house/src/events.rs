@@ -2,7 +2,7 @@
 //! reading its state.
 
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{near, AccountId};
+use near_sdk::{near, AccountId, NearToken};
 
 #[near(event_json(standard = "setoff"))]
 pub enum Event {
@@ -40,6 +40,12 @@ pub enum Event {
     },
     #[event_version("1.0.0")]
     RoundDiscarded { asset: AccountId, round: U64, reason: String },
+    #[event_version("1.0.0")]
+    BondReturned { solver: AccountId, amount: NearToken },
+    #[event_version("1.0.0")]
+    BondReturnFailed { solver: AccountId, amount: NearToken },
+    #[event_version("1.0.0")]
+    OwnershipTransferred { from: AccountId, to: AccountId },
     #[event_version("1.0.0")]
     RewardsFunded { asset: AccountId, by: AccountId, amount: U128 },
     #[event_version("1.0.0")]

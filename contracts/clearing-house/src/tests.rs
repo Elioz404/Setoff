@@ -458,7 +458,7 @@ fn nobody_withdraws_more_than_they_have() {
 }
 
 #[test]
-#[should_panic(expected = "proposal bond does not cover the storage of a full proposal")]
+#[should_panic(expected = "proposal bond does not cover the storage of a full proposal and its winnings")]
 fn the_bond_must_cover_a_full_proposal() {
     let env = Env { now: 0 };
     env.call("owner.test", NearToken::from_yoctonear(0));
@@ -476,7 +476,7 @@ fn only_the_owner_adds_assets() {
 }
 
 #[test]
-#[should_panic(expected = "round duration must be positive and at most thirty days")]
+#[should_panic(expected = "round duration must be positive and at most one hour")]
 fn rounds_cannot_last_forever() {
     let env = Env { now: 0 };
     env.call("owner.test", NearToken::from_yoctonear(0));
@@ -501,4 +501,43 @@ fn active_obligations_page_by_asset() {
     assert_eq!(page(0)[0].id, first);
     assert_eq!(page(1)[0].id, second);
     assert_eq!(page(2), vec![]);
+}
+
+#[test]
+fn ownership_moves_to_a_new_account() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("owner.test", NearToken::from_yoctonear(1));
+    house.transfer_ownership(account("dao.test"));
+    assert_eq!(house.get_owner(), account("dao.test"));
+    assert!(get_logs().iter().any(|l| l.contains(r#""event":"ownership_transferred""#)));
+}
+
+#[test]
+#[should_panic(expected = "only the owner can do this")]
+fn the_previous_owner_loses_its_role() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("owner.test", NearToken::from_yoctonear(1));
+    house.transfer_ownership(account("dao.test"));
+    env.call("owner.test", STORAGE);
+    house.admit(vec![account("d")]);
+}
+
+#[test]
+#[should_panic(expected = "attach exactly 1 yoctoNEAR")]
+fn ownership_needs_a_full_access_confirmation() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("owner.test", NearToken::from_yoctonear(0));
+    house.transfer_ownership(account("dao.test"));
+}
+
+#[test]
+fn a_failed_bond_refund_is_on_the_record() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.callback(PromiseResult::Failed);
+    house.on_bond_returned(account("solver-1"), BOND, Err(near_sdk::PromiseError::Failed));
+    assert!(get_logs().iter().any(|l| l.contains(r#""event":"bond_return_failed""#)));
 }
