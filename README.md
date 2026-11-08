@@ -7,6 +7,8 @@ in a NEP-141 stablecoin. Built at NEAR HACKATHON (November 2026). Runs on NEAR t
 Live page: https://elioz404.github.io/Setoff/ (the demo clearing, the solver comparison, and the house on testnet read
 from its contract).
 
+https://github.com/user-attachments/assets/ebebeadb-9ad2-4dd0-ac36-cf43ec475e21
+
 ## The problem
 
 Small firms extend each other credit all the time: the bakery owes the mill, the mill owes the farm, the farm owes the
