@@ -1,0 +1,15 @@
+[package]
+name = "setoff-core"
+description = "Validation rules for multilateral set-off of obligations"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true
