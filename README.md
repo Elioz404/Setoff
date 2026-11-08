@@ -120,9 +120,10 @@ The code on both contracts is the wasm `scripts/build-contracts.sh` builds. `npm
 `code_hash` NEAR reports for each account (`near account view-account-summary <account> network-config testnet now`).
 The full list is in `deployments/testnet.json`, which the page reads.
 
-Both accounts still hold the full-access key they were deployed with, so for now the deployer could replace their code.
-`npm run demo -- lock` lists those keys and `npm run demo -- lock --confirm` deletes them for good, after which nobody can
-change the contracts or their configuration.
+Both accounts are locked: their full-access keys were deleted with `npm run demo -- lock --confirm`, so nobody, the
+deployer included, can replace their code, change their configuration or move their NEAR. Check it with
+`near account list-keys house.setoff.testnet network-config testnet now` (and the same for `tusd.setoff.testnet`): no
+keys are listed.
 
 ## Checking the claims
 
@@ -203,8 +204,8 @@ On Windows Git Bash, prefix the `docker` commands with `MSYS_NO_PATHCONV=1` and 
   fails, and need a 1 yoctoNEAR deposit, so a function-call key alone cannot trigger them.
 - **Keys.** The agent and the demo tool read keys from the environment or from key files outside the repository.
 - **Configuration.** Round length, proposal size, bond and reward rate are set at deployment; the contract has no
-  method to change them. Only replacing the code could, which `npm run demo -- lock --confirm` rules out by deleting the
-  accounts' full-access keys. The owner's role can be handed to a DAO with `transfer_ownership`.
+  method to change them. Only replacing the code could, and the deployed accounts have no keys left to do it
+  (`npm run demo -- lock --confirm` deleted them). The owner's role can be handed to a DAO with `transfer_ownership`.
 
 ## Limits
 

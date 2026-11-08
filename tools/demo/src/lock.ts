@@ -17,6 +17,7 @@ export async function lock(
   confirmed: boolean,
   log: (message: string) => void,
 ): Promise<void> {
+  let unlocked = 0;
   for (const accountId of [deployment.house, deployment.token.account]) {
     const { keys: accessKeys } = await chain.provider.viewAccessKeyList({ accountId });
     const fullAccess = accessKeys.filter((k) => String(k.access_key.permission) === "FullAccess").map((k) => k.public_key);
@@ -24,6 +25,7 @@ export async function lock(
       log(`${accountId} has no full-access key left: already locked`);
       continue;
     }
+    unlocked++;
     if (!confirmed) {
       log(`${accountId}: would delete ${fullAccess.length} full-access key(s): ${fullAccess.join(", ")}`);
       continue;
@@ -38,5 +40,5 @@ export async function lock(
       log(`${accountId}: deleted ${publicKey}`);
     }
   }
-  if (!confirmed) log("nothing deleted: run `npm run demo -- lock --confirm` to lock the contracts for good");
+  if (!confirmed && unlocked > 0) log("nothing deleted: run `npm run demo -- lock --confirm` to lock the contracts for good");
 }
