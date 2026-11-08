@@ -4,8 +4,11 @@ import { fileURLToPath } from "node:url";
 
 export const repositoryRoot = resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 
+/** Public testnet RPC endpoints, tried in order. */
+export const TESTNET_RPC_URLS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"] as const;
+
 export interface DemoEnvironment {
-  readonly rpcUrl: string;
+  readonly rpcUrls: readonly string[];
   readonly rootAccount: string;
   readonly rootKeyFile: string;
   readonly keyDir: string;
@@ -25,12 +28,13 @@ export function loadEnvironment(env: Readonly<Record<string, string | undefined>
     return value;
   };
   const rootAccount = required("SETOFF_ROOT_ACCOUNT");
-  const rpcUrl = env.NEAR_RPC_URL?.trim() || "https://test.rpc.fastnear.com";
-  if (!rootAccount.endsWith(".testnet") || /mainnet/i.test(rpcUrl)) {
+  const listed = env.NEAR_RPC_URL?.split(",").map((url) => url.trim()).filter(Boolean) ?? [];
+  const rpcUrls = listed.length > 0 ? listed : [...TESTNET_RPC_URLS];
+  if (!rootAccount.endsWith(".testnet") || rpcUrls.some((url) => /mainnet/i.test(url))) {
     throw new Error("the demo tool only runs on testnet: use a .testnet root account and a testnet RPC");
   }
   return {
-    rpcUrl,
+    rpcUrls,
     rootAccount,
     rootKeyFile: env.SETOFF_ROOT_KEY_FILE?.trim() || join(homedir(), ".near-credentials", "testnet", `${rootAccount}.json`),
     keyDir: env.SETOFF_KEY_DIR?.trim() || join(homedir(), ".near-credentials", "testnet"),

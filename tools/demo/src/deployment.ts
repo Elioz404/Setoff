@@ -7,7 +7,7 @@ import { dirname } from "node:path";
  */
 export interface Deployment {
   readonly network: "testnet";
-  readonly rpcUrl: string;
+  readonly rpcUrls: readonly string[];
   readonly scenario: string;
   readonly house: string;
   readonly token: { readonly account: string; readonly symbol: string; readonly decimals: number };

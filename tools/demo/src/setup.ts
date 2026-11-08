@@ -34,7 +34,7 @@ export async function setup(ctx: SetupContext): Promise<Deployment> {
   const tokenWasm = join(env.wasmDir, "setoff_test_token.wasm");
   const decimals = scenario.token.decimals;
   const writer = (label: string) =>
-    new HouseWriter(env.rpcUrl, label, keys.keyFor(label), ids.house(), { storage: near(scenario.funding.storageDepositNear) });
+    new HouseWriter(env.rpcUrls, label, keys.keyFor(label), ids.house(), { storage: near(scenario.funding.storageDepositNear) });
 
   const accounts: [string, string][] = [
     [ids.house(), scenario.funding.houseNear],
@@ -92,11 +92,21 @@ export async function setup(ctx: SetupContext): Promise<Deployment> {
     log(`registered ${accountId} with the token`);
   }
 
+  const firms = scenario.firms.map((f) => ids.of(f.id));
+  const outsiders: string[] = [];
+  for (const account of firms) {
+    if (!(await chain.provider.callFunction({ contractId: ids.house(), method: "is_member", args: { account } }))) outsiders.push(account);
+  }
+  if (outsiders.length > 0) {
+    await new HouseWriter(env.rpcUrls, env.rootAccount, ctx.rootKey, ids.house(), { storage: storageDeposit }).admit(outsiders);
+    log(`admitted ${outsiders.length} firms as members`);
+  }
+
   const previous = readDeployment(env.deploymentPath);
   let obligations = previous?.house === ids.house() ? [...previous.obligations] : [];
   const deployment = (): Deployment => ({
     network: "testnet",
-    rpcUrl: env.rpcUrl,
+    rpcUrls: env.rpcUrls,
     scenario: scenario.name,
     house: ids.house(),
     token: { account: ids.token(), symbol: scenario.token.symbol, decimals },
@@ -111,7 +121,7 @@ export async function setup(ctx: SetupContext): Promise<Deployment> {
     const pool = parseAmount(scenario.house.rewardPool, decimals);
     if (pool > 0n) {
       await mint(root, ids.token(), pool, parseAmount(scenario.token.faucetCap, decimals));
-      await new HouseWriter(env.rpcUrl, env.rootAccount, ctx.rootKey, ids.house(), { storage: storageDeposit }).fundRewards(ids.token(), pool);
+      await new HouseWriter(env.rpcUrls, env.rootAccount, ctx.rootKey, ids.house(), { storage: storageDeposit }).fundRewards(ids.token(), pool);
       log(`funded the solver reward pool with ${scenario.house.rewardPool} ${scenario.token.symbol}`);
     }
   }

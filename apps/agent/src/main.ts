@@ -48,8 +48,8 @@ async function step(config: AgentConfig, reader: HouseReader, writer: HouseWrite
 
 async function main() {
   const config = loadConfig(process.env);
-  const reader = new HouseReader(config.rpcUrl, config.contractId);
-  const writer = new HouseWriter(config.rpcUrl, config.accountId, config.privateKey, config.contractId, { storage: 0n });
+  const reader = new HouseReader(config.rpcUrls, config.contractId);
+  const writer = new HouseWriter(config.rpcUrls, config.accountId, config.privateKey, config.contractId, { storage: 0n });
   log("solver started", { solver: config.accountId, strategy: config.strategy, house: config.contractId, asset: config.asset });
 
   for (;;) {

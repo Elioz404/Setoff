@@ -1,17 +1,17 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { Account, baseEncode, JsonRpcProvider, KeyPair, KeyPairSigner, teraToGas, type KeyPairString } from "near-api-js";
+import { Account, baseEncode, FailoverRpcProvider, JsonRpcProvider, KeyPair, KeyPairSigner, teraToGas, type KeyPairString } from "near-api-js";
 
 /** Code hash NEAR reports for an account with no contract. */
 const NO_CODE = "11111111111111111111111111111111";
 
 /** Accounts and contracts on one network, signed with keys handed in by the caller. */
 export class Chain {
-  readonly provider: JsonRpcProvider;
+  readonly provider: FailoverRpcProvider;
 
-  constructor(rpcUrl: string) {
-    this.provider = new JsonRpcProvider({ url: rpcUrl });
+  constructor(rpcUrls: readonly string[]) {
+    this.provider = new FailoverRpcProvider(rpcUrls.map((url) => new JsonRpcProvider({ url })));
   }
 
   account(accountId: string, privateKey: KeyPairString): Account {

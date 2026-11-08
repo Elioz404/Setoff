@@ -7,16 +7,31 @@ export class RpcError extends Error {
   override readonly name = "RpcError";
 }
 
+/** The endpoint, not the contract, failed: worth trying another one. */
+class EndpointError extends Error {
+  override readonly name = "EndpointError";
+}
+
 /**
  * Read-only access to a clearing house through NEAR JSON-RPC view calls.
  * It needs nothing but `fetch`, so it runs the same in a browser and in Node.
+ *
+ * Public RPC endpoints rate-limit and go down, so it takes several and moves
+ * to the next one when an endpoint fails to answer. An error from the
+ * contract itself is the same on every endpoint and is reported at once.
  */
 export class HouseReader {
+  private readonly rpcUrls: readonly string[];
+  private current = 0;
+
   constructor(
-    readonly rpcUrl: string,
+    rpcUrls: string | readonly string[],
     readonly contractId: string,
     private readonly fetcher: typeof fetch = globalThis.fetch.bind(globalThis),
-  ) {}
+  ) {
+    this.rpcUrls = typeof rpcUrls === "string" ? [rpcUrls] : rpcUrls;
+    if (this.rpcUrls.length === 0) throw new RangeError("at least one RPC URL is needed");
+  }
 
   config(): Promise<HouseConfig> {
     return this.view("get_config", {});
@@ -48,13 +63,8 @@ export class HouseReader {
   }
 
   /** Accepted obligations in `asset` with something outstanding: the graph to clear. */
-  async active(asset: string): Promise<ObligationView[]> {
-    const total = BigInt(await this.view<string>("active_count", {}));
-    const result: ObligationView[] = [];
-    for (let from = 0n; from < total; from += BigInt(PAGE)) {
-      result.push(...(await this.view<ObligationView[]>("list_active", { asset, from_index: String(from), limit: PAGE })));
-    }
-    return result;
+  active(asset: string): Promise<ObligationView[]> {
+    return this.pages((from_index) => this.view("list_active", { asset, from_index, limit: PAGE }));
   }
 
   solvers(): Promise<SolverView[]> {
@@ -63,7 +73,22 @@ export class HouseReader {
 
   /** Calls a view method of the contract and decodes its JSON result. */
   async view<T>(method: string, args: Record<string, unknown>): Promise<T> {
-    const response = await this.fetcher(this.rpcUrl, {
+    const failures: string[] = [];
+    for (let attempt = 0; attempt < this.rpcUrls.length; attempt++) {
+      const url = this.rpcUrls[this.current]!;
+      try {
+        return await this.viewAt<T>(url, method, args);
+      } catch (error) {
+        if (!(error instanceof EndpointError)) throw error;
+        failures.push(`${url}: ${error.message}`);
+        this.current = (this.current + 1) % this.rpcUrls.length;
+      }
+    }
+    throw new RpcError(`${method}: no RPC endpoint answered (${failures.join("; ")})`);
+  }
+
+  private async viewAt<T>(url: string, method: string, args: Record<string, unknown>): Promise<T> {
+    const response = await this.fetcher(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,8 +103,10 @@ export class HouseReader {
           args_base64: toBase64(JSON.stringify(args)),
         },
       }),
+    }).catch((error: unknown) => {
+      throw new EndpointError(error instanceof Error ? error.message : String(error));
     });
-    if (!response.ok) throw new RpcError(`${method}: RPC answered HTTP ${response.status}`);
+    if (!response.ok) throw new EndpointError(`HTTP ${response.status}`);
     const body = (await response.json()) as { result?: { result?: number[]; error?: string }; error?: { message?: string; data?: unknown } };
     if (body.error) throw new RpcError(`${method}: ${body.error.message ?? "RPC error"} ${JSON.stringify(body.error.data ?? "")}`);
     if (body.result?.error) throw new RpcError(`${method}: ${body.result.error}`);

@@ -1,4 +1,4 @@
-import { Account, JsonRpcProvider, KeyPairSigner, teraToGas, type KeyPairString } from "near-api-js";
+import { Account, FailoverRpcProvider, JsonRpcProvider, KeyPairSigner, teraToGas, type KeyPairString } from "near-api-js";
 
 import type { ReductionInput } from "./types.ts";
 
@@ -22,19 +22,24 @@ export class HouseWriter {
   private readonly account: Account;
 
   constructor(
-    rpcUrl: string,
+    rpcUrls: readonly string[],
     readonly accountId: string,
     privateKey: KeyPairString,
     readonly contractId: string,
     private readonly deposits: Deposits,
   ) {
-    const provider = new JsonRpcProvider({ url: rpcUrl });
+    const provider = new FailoverRpcProvider(rpcUrls.map((url) => new JsonRpcProvider({ url })));
     this.account = new Account(accountId, provider, KeyPairSigner.fromSecretKey(privateKey));
   }
 
   /** Records that `debtor` owes this account `amount` of `asset`. Returns the obligation id. */
   async issue(debtor: string, asset: string, amount: bigint, reference: string): Promise<string> {
     return this.call<string>("issue", { debtor, asset, amount: amount.toString(), reference }, this.deposits.storage);
+  }
+
+  /** Admits firms as members; only the house's owner may call it. */
+  async admit(accounts: readonly string[]): Promise<void> {
+    await this.call("admit", { accounts }, this.deposits.storage);
   }
 
   async accept(id: string): Promise<void> {

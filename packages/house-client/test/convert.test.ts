@@ -37,6 +37,37 @@ describe("HouseReader", () => {
     assert.deepEqual(await reader.assets(), ["usd.testnet"]);
   });
 
+  it("moves to the next endpoint when one fails to answer", async () => {
+    const bytes = [...new TextEncoder().encode(JSON.stringify(["usd.testnet"]))];
+    const asked: string[] = [];
+    const fetcher: typeof fetch = async (url) => {
+      asked.push(String(url));
+      return String(url).includes("busy")
+        ? new Response("Too Many Requests", { status: 429 })
+        : new Response(JSON.stringify({ result: { result: bytes } }), { status: 200 });
+    };
+    const reader = new HouseReader(["http://busy", "http://spare"], "house.testnet", fetcher);
+    assert.deepEqual(await reader.assets(), ["usd.testnet"]);
+    assert.deepEqual(await reader.assets(), ["usd.testnet"]);
+    assert.deepEqual(asked, ["http://busy", "http://spare", "http://spare"]);
+  });
+
+  it("names every endpoint when none answers", async () => {
+    const down: typeof fetch = async () => new Response("", { status: 503 });
+    const reader = new HouseReader(["http://one", "http://two"], "house.testnet", down);
+    await assert.rejects(reader.assets(), /no RPC endpoint answered \(http:\/\/one: HTTP 503; http:\/\/two: HTTP 503\)/);
+  });
+
+  it("does not retry an error from the contract itself", async () => {
+    let calls = 0;
+    const failing: typeof fetch = async () => {
+      calls++;
+      return new Response(JSON.stringify({ result: { error: "wasm execution failed" } }), { status: 200 });
+    };
+    await assert.rejects(new HouseReader(["http://one", "http://two"], "house.testnet", failing).assets(), RpcError);
+    assert.equal(calls, 1);
+  });
+
   it("reports contract errors", async () => {
     const reader = new HouseReader("http://rpc", "house.testnet", reply({ result: { error: "wasm execution failed" } }));
     await assert.rejects(reader.assets(), RpcError);

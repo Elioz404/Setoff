@@ -28,7 +28,7 @@ async function main(command: string | undefined) {
   const keys = new KeyStore(env.keyDir, repositoryRoot);
 
   if (command === "setup") {
-    const chain = new Chain(env.rpcUrl);
+    const chain = new Chain(env.rpcUrls);
     const rootKey = readKeyFile(env.rootKeyFile, env.rootAccount);
     const deployment = await setup({
       env,
@@ -50,7 +50,7 @@ async function main(command: string | undefined) {
   if (command === "settle") {
     await settle(deployment, keys, log);
   }
-  const obligations = await new HouseReader(deployment.rpcUrl, deployment.house).obligations();
+  const obligations = await new HouseReader(deployment.rpcUrls, deployment.house).obligations();
   log(describeTotals(totals(obligations), deployment.token.decimals, deployment.token.symbol));
 }
 

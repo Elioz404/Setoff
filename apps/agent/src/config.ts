@@ -6,7 +6,8 @@ import type { KeyPairString } from "near-api-js";
 export type Strategy = "optimal" | "greedy";
 
 export interface AgentConfig {
-  readonly rpcUrl: string;
+  /** Tried in order; NEAR_RPC_URL may list several, separated by commas. */
+  readonly rpcUrls: readonly string[];
   readonly contractId: string;
   readonly asset: string;
   readonly accountId: string;
@@ -52,7 +53,7 @@ export function loadConfig(
   }
 
   return {
-    rpcUrl: required("NEAR_RPC_URL"),
+    rpcUrls: required("NEAR_RPC_URL").split(",").map((url) => url.trim()).filter(Boolean),
     contractId: required("SETOFF_CONTRACT"),
     asset: required("SETOFF_ASSET"),
     accountId,

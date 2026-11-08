@@ -4,7 +4,7 @@ import { HouseReader, type HouseConfig, type ObligationView, type RoundView, typ
 
 import type { Deployment } from "../config.ts";
 
-const POLL_MS = 5_000;
+const POLL_MS = 10_000;
 
 export interface LiveState {
   readonly config: HouseConfig;
@@ -25,7 +25,7 @@ export function useLiveHouse(deployment: Deployment): Live {
   const [live, setLive] = useState<Live>({ status: "loading" });
 
   useEffect(() => {
-    const reader = new HouseReader(deployment.rpcUrl, deployment.house);
+    const reader = new HouseReader(deployment.rpcUrls, deployment.house);
     const asset = deployment.token.account;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;

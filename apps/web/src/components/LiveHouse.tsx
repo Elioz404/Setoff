@@ -19,14 +19,14 @@ export function LiveHouse({ deployment }: { readonly deployment: Deployment }) {
       <div className="band-head">
         <h2 id="live">Live on {deployment.network}</h2>
         <p>
-          Read from <a href={explorerAccountUrl(deployment.network, deployment.house)}>{deployment.house}</a> every five seconds.
+          Read from <a href={explorerAccountUrl(deployment.network, deployment.house)}>{deployment.house}</a> every ten seconds.
           Amounts are in {deployment.token.symbol}, a test token with no value.
         </p>
       </div>
       {live.status === "loading" ? <p className="status">Reading the contract…</p> : null}
       {live.status === "failed" ? (
         <p className="status status-error" role="alert">
-          Could not read the contract: {live.error}. The page tries again in five seconds.
+          Could not read the contract: {live.error}. The page tries again in ten seconds.
         </p>
       ) : null}
       {live.status === "ready" ? <LiveView deployment={deployment} state={live.state} {...(live.error ? { error: live.error } : {})} /> : null}

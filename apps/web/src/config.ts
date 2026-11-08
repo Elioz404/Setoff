@@ -7,7 +7,8 @@ export const repositoryUrl: string = rootPackage.repository.url;
 /** What `tools/demo setup` writes to deployments/<network>.json. */
 export interface Deployment {
   readonly network: string;
-  readonly rpcUrl: string;
+  /** Public RPC endpoints, tried in order. */
+  readonly rpcUrls: readonly string[];
   readonly house: string;
   readonly token: { readonly account: string; readonly symbol: string; readonly decimals: number };
   readonly firms: readonly { readonly id: string; readonly name: string; readonly trade: string; readonly account: string }[];
@@ -49,8 +50,8 @@ export function liveDeployment(): Deployment | undefined {
   const network = import.meta.env.VITE_SETOFF_NETWORK ?? "testnet";
   const deployment = Object.entries(deployments).find(([path]) => path.endsWith(`/${network}.json`))?.[1];
   if (!deployment) return undefined;
-  const rpcUrl = import.meta.env.VITE_NEAR_RPC_URL ?? deployment.rpcUrl;
-  return { ...deployment, rpcUrl };
+  const override = import.meta.env.VITE_NEAR_RPC_URL?.split(",").map((url: string) => url.trim()).filter(Boolean) ?? [];
+  return override.length > 0 ? { ...deployment, rpcUrls: override } : deployment;
 }
 
 export function explorerAccountUrl(network: string, account: string): string {
