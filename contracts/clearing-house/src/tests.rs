@@ -61,9 +61,13 @@ fn config() -> Config {
     Config { round_duration_ns: U64(ROUND), max_reductions: 16, proposal_bond: BOND, reward_bps: 50 }
 }
 
+/// A house whose members are the firms a, b and c.
 fn house(env: &Env) -> ClearingHouse {
     env.call("owner.test", NearToken::from_yoctonear(0));
-    ClearingHouse::new(account("owner.test"), config(), vec![usd()])
+    let mut house = ClearingHouse::new(account("owner.test"), config(), vec![usd()]);
+    env.call("owner.test", STORAGE);
+    house.admit(vec![account("a"), account("b"), account("c")]);
+    house
 }
 
 fn issue(env: &Env, house: &mut ClearingHouse, creditor: &str, debtor: &str, amount: u128) -> U64 {
@@ -266,22 +270,76 @@ fn a_round_takes_no_proposal_after_its_deadline() {
 }
 
 #[test]
-fn a_proposal_made_stale_by_a_payment_is_discarded() {
+#[should_panic(expected = "obligation is part of the open round's best proposal: pay after close_round")]
+fn lines_under_proposal_cannot_be_paid_until_the_round_closes() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    let [ab, bc, ca] = triangle(&env, &mut house);
+    env.call("solver-1", BOND);
+    house.submit(usd(), vec![line(ab, 60), line(bc, 60), line(ca, 60)]);
+    // Paying one unit used to make the proposal stale and get it discarded.
+    pay(&env, &mut house, "c", ca, 1);
+}
+
+#[test]
+fn a_payment_waits_for_the_round_and_then_settles_the_rest() {
     let mut env = Env { now: 0 };
     let mut house = house(&env);
     let [ab, bc, ca] = triangle(&env, &mut house);
     env.call("solver-1", BOND);
     house.submit(usd(), vec![line(ab, 60), line(bc, 60), line(ca, 60)]);
-
-    assert_eq!(pay(&env, &mut house, "c", ca, 60), 0);
-
     env.now = ROUND;
     env.call("anyone", NearToken::from_yoctonear(0));
     house.close_round(usd());
-    assert_eq!(outstanding(&house, ab), 100);
-    assert_eq!(outstanding(&house, bc), 80);
-    assert!(get_logs().iter().any(|l| l.contains(r#""event":"round_discarded""#)));
-    assert_eq!(house.list_solvers(None, None), vec![]);
+
+    assert_eq!(pay(&env, &mut house, "a", ab, 50), 10);
+    assert_eq!(outstanding(&house, ab), 0);
+    assert_eq!(house.get_balance(account("b"), usd()), U128(40));
+}
+
+#[test]
+#[should_panic(expected = "d.test is not a member of this clearing house")]
+fn only_members_owe_each_other() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("a", STORAGE);
+    house.issue(account("d"), usd(), U128(100), String::new());
+}
+
+#[test]
+#[should_panic(expected = "a.test is not a member of this clearing house")]
+fn an_expelled_member_cannot_take_on_new_debt() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("owner.test", NearToken::from_yoctonear(0));
+    house.expel(account("a"));
+    env.call("b", STORAGE);
+    house.issue(account("a"), usd(), U128(100), String::new());
+}
+
+#[test]
+fn debt_owed_before_expulsion_can_still_be_cleared() {
+    let mut env = Env { now: 0 };
+    let mut house = house(&env);
+    let [ab, bc, ca] = triangle(&env, &mut house);
+    env.call("owner.test", NearToken::from_yoctonear(0));
+    house.expel(account("a"));
+    env.call("solver-1", BOND);
+    house.submit(usd(), vec![line(ab, 60), line(bc, 60), line(ca, 60)]);
+    env.now = ROUND;
+    env.call("anyone", NearToken::from_yoctonear(0));
+    house.close_round(usd());
+    assert_eq!(outstanding(&house, ca), 0);
+    assert!(!house.is_member(account("a")));
+}
+
+#[test]
+#[should_panic(expected = "only the owner can do this")]
+fn only_the_owner_admits_members() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("a", STORAGE);
+    house.admit(vec![account("d")]);
 }
 
 #[test]
@@ -409,10 +467,38 @@ fn the_bond_must_cover_a_full_proposal() {
 }
 
 #[test]
-#[should_panic(expected = "only the owner can add assets")]
+#[should_panic(expected = "only the owner can do this")]
 fn only_the_owner_adds_assets() {
     let env = Env { now: 0 };
     let mut house = house(&env);
     env.call("a", STORAGE);
     house.add_asset(account("eur.test"));
+}
+
+#[test]
+#[should_panic(expected = "round duration must be positive and at most thirty days")]
+fn rounds_cannot_last_forever() {
+    let env = Env { now: 0 };
+    env.call("owner.test", NearToken::from_yoctonear(0));
+    let config = Config { round_duration_ns: U64(u64::MAX), ..config() };
+    let _ = ClearingHouse::new(account("owner.test"), config, vec![usd()]);
+}
+
+#[test]
+fn active_obligations_page_by_asset() {
+    let env = Env { now: 0 };
+    let mut house = house(&env);
+    env.call("owner.test", STORAGE);
+    house.add_asset(account("eur.test"));
+    let first = issue(&env, &mut house, "b", "a", 10);
+    env.call("b", STORAGE);
+    let euros = house.issue(account("a"), account("eur.test"), U128(5), String::new());
+    env.call("a", STORAGE);
+    house.accept(euros);
+    let second = issue(&env, &mut house, "c", "a", 20);
+
+    let page = |from: u64| house.list_active(usd(), Some(U64(from)), Some(1));
+    assert_eq!(page(0)[0].id, first);
+    assert_eq!(page(1)[0].id, second);
+    assert_eq!(page(2), vec![]);
 }

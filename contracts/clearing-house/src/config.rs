@@ -1,6 +1,9 @@
 use near_sdk::json_types::U64;
 use near_sdk::{env, near, require, NearToken};
 
+/// Longest a round may stay open: thirty days.
+pub const MAX_ROUND_DURATION_NS: u64 = 30 * 24 * 60 * 60 * 1_000_000_000;
+
 /// Upper bound on reductions per proposal, whatever the configuration says,
 /// so that validating and applying a proposal always fits in one call.
 pub const MAX_REDUCTIONS_CAP: u32 = 128;
@@ -32,7 +35,10 @@ pub struct Config {
 
 impl Config {
     pub fn validate(&self) {
-        require!(self.round_duration_ns.0 > 0, "round duration must be positive");
+        require!(
+            self.round_duration_ns.0 > 0 && self.round_duration_ns.0 <= MAX_ROUND_DURATION_NS,
+            "round duration must be positive and at most thirty days"
+        );
         require!(
             self.max_reductions >= 2 && self.max_reductions <= MAX_REDUCTIONS_CAP,
             "max_reductions must be between 2 and 128"

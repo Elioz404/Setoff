@@ -102,6 +102,13 @@ impl ClearingHouse {
         let obligation = self.obligation(id);
         require!(obligation.status == ObligationStatus::Active, "obligation is not active");
         require!(obligation.asset == *asset, "payment is in another asset than the obligation");
+        // A payment would make the round's best proposal stale, and a stale
+        // proposal is discarded at close: paying one unit could then block
+        // every round. Lines under proposal wait until the round closes.
+        require!(
+            !self.is_under_proposal(asset, id),
+            "obligation is part of the open round's best proposal: pay after close_round"
+        );
         let outcome = apply_payment(obligation.outstanding, paid);
         let remaining = self.reduce(id, outcome.applied, false);
         self.credit(BalanceKey { account: obligation.creditor, asset: asset.clone() }, outcome.applied);

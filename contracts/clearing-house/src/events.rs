@@ -7,6 +7,10 @@ use near_sdk::{near, AccountId};
 #[near(event_json(standard = "setoff"))]
 pub enum Event {
     #[event_version("1.0.0")]
+    MemberAdmitted { account: AccountId },
+    #[event_version("1.0.0")]
+    MemberExpelled { account: AccountId },
+    #[event_version("1.0.0")]
     ObligationIssued {
         id: U64,
         debtor: AccountId,

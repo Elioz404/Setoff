@@ -41,8 +41,9 @@ pub struct StoredObligation {
 
 #[near]
 impl ClearingHouse {
-    /// Records that `debtor` owes the caller `amount` of `asset`. The debtor
-    /// still has to accept it before it can be paid or cleared. The caller
+    /// Records that `debtor` owes the caller `amount` of `asset`. Both must be
+    /// members. The debtor still has to accept it before it can be paid or
+    /// cleared. The caller
     /// pays for its storage, including the balance entry future payments are
     /// credited to.
     #[payable]
@@ -52,6 +53,8 @@ impl ClearingHouse {
         require!(amount.0 > 0, "amount must be positive");
         require!(reference.len() <= MAX_REFERENCE_LEN, "reference is longer than 64 bytes");
         self.require_asset(&asset);
+        self.require_member(&creditor);
+        self.require_member(&debtor);
 
         let before = self.storage_usage();
         let id = self.next_obligation_id;
@@ -84,6 +87,7 @@ impl ClearingHouse {
         let caller = env::predecessor_account_id();
         let obligation = self.pending_obligation(id.0);
         require!(obligation.debtor == caller, "only the debtor can accept an obligation");
+        self.require_member(&caller);
         let before = self.storage_usage();
         self.set_status(id.0, ObligationStatus::Active);
         self.active.insert(id.0);

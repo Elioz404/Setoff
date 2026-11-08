@@ -97,7 +97,12 @@ impl ClearingHouse {
         if let Some(outbid) = round.best.take() {
             Promise::new(outbid.solver).transfer(outbid.bond).detach();
         }
-        round.closes_at_ns.get_or_insert(now + self.config.round_duration_ns.0);
+        if round.closes_at_ns.is_none() {
+            let closes_at = now
+                .checked_add(self.config.round_duration_ns.0)
+                .unwrap_or_else(|| env::panic_str("round deadline overflows"));
+            round.closes_at_ns = Some(closes_at);
+        }
         round.best = Some(StoredProposal {
             solver: solver.clone(),
             reductions: validated.reductions().iter().map(|r| (r.obligation, r.amount)).collect(),
@@ -145,6 +150,15 @@ impl ClearingHouse {
 }
 
 impl ClearingHouse {
+    /// Whether obligation `id` is a line of the best proposal of `asset`'s
+    /// round, which stays the case until the round is closed.
+    pub(crate) fn is_under_proposal(&self, asset: &AccountId, id: u64) -> bool {
+        self.rounds
+            .get(asset)
+            .and_then(|round| round.best.as_ref())
+            .is_some_and(|best| best.reductions.iter().any(|&(obligation, _)| obligation == id))
+    }
+
     pub(crate) fn round(&self, asset: &AccountId) -> Round {
         self.rounds.get(asset).cloned().unwrap_or_else(|| env::panic_str("asset has no round"))
     }

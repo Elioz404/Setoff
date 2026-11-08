@@ -100,22 +100,32 @@ impl ClearingHouse {
     }
 
     /// Accepted obligations in `asset` with something still outstanding: the
-    /// graph a solver works on.
+    /// graph a solver works on. `from_index` counts obligations in `asset`
+    /// only, so every page is full until the last one.
     pub fn list_active(
         &self,
         asset: AccountId,
         from_index: Option<U64>,
         limit: Option<u32>,
     ) -> Vec<ObligationView> {
-        page(self.active.iter(), from_index, limit)
+        let in_asset = self
+            .active
+            .iter()
             .filter_map(|id| self.obligations.get(id).map(|o| (id, o)))
-            .filter(|(_, o)| o.asset == asset)
-            .map(|(id, o)| ObligationView::new(*id, o))
-            .collect()
+            .filter(|(_, o)| o.asset == asset);
+        page(in_asset, from_index, limit).map(|(id, o)| ObligationView::new(*id, o)).collect()
     }
 
     pub fn active_count(&self) -> U64 {
         U64(u64::from(self.active.len()))
+    }
+
+    pub fn is_member(&self, account: AccountId) -> bool {
+        self.members.contains(&account)
+    }
+
+    pub fn list_members(&self, from_index: Option<U64>, limit: Option<u32>) -> Vec<AccountId> {
+        page(self.members.iter(), from_index, limit).cloned().collect()
     }
 
     pub fn get_round(&self, asset: AccountId) -> RoundView {

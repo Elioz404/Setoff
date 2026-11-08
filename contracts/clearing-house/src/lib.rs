@@ -1,7 +1,7 @@
 //! The Setoff clearing house.
 //!
-//! Members record what they owe each other as obligations: a creditor issues
-//! one, the debtor accepts it. Solvers then compete, round by round and per
+//! Members, admitted by the owner, record what they owe each other as
+//! obligations: a creditor issues one, the debtor accepts it. Solvers then compete, round by round and per
 //! asset, to propose the clearing that cancels the most debt; the contract
 //! accepts a proposal only if it passes the rules in [`setoff_core`], so no
 //! member's net position ever changes. What remains is paid in the asset's
@@ -13,6 +13,7 @@
 mod clearing;
 mod config;
 mod events;
+mod members;
 mod obligations;
 mod payments;
 mod storage;
@@ -33,6 +34,7 @@ pub use views::{ObligationView, RoundView, SolverStats};
 #[near]
 enum StorageKey {
     Assets,
+    Members,
     Obligations,
     Active,
     Rounds,
@@ -56,6 +58,9 @@ pub struct ClearingHouse {
     config: Config,
     /// NEP-141 token contracts obligations may be denominated in.
     assets: IterableSet<AccountId>,
+    /// Firms admitted by the owner. Only members owe or are owed, so nobody
+    /// can invent debt between accounts of their own to clear it.
+    members: IterableSet<AccountId>,
     obligations: IterableMap<u64, StoredObligation>,
     /// Ids of accepted obligations that still have something outstanding.
     active: IterableSet<u64>,
@@ -80,6 +85,7 @@ impl ClearingHouse {
             owner,
             config,
             assets: IterableSet::new(StorageKey::Assets),
+            members: IterableSet::new(StorageKey::Members),
             obligations: IterableMap::new(StorageKey::Obligations),
             active: IterableSet::new(StorageKey::Active),
             next_obligation_id: 0,
@@ -98,7 +104,7 @@ impl ClearingHouse {
     /// it, and pays for the storage it adds.
     #[payable]
     pub fn add_asset(&mut self, asset: AccountId) {
-        require!(env::predecessor_account_id() == self.owner, "only the owner can add assets");
+        self.require_owner();
         let before = self.storage_usage();
         self.insert_asset(asset);
         let after = self.storage_usage();
@@ -118,6 +124,7 @@ impl ClearingHouse {
     /// let callers add storage without paying for it.
     fn storage_usage(&mut self) -> u64 {
         self.assets.flush();
+        self.members.flush();
         self.obligations.flush();
         self.active.flush();
         self.rounds.flush();
@@ -125,6 +132,10 @@ impl ClearingHouse {
         self.rewards.flush();
         self.solvers.flush();
         env::storage_usage()
+    }
+
+    fn require_owner(&self) {
+        require!(env::predecessor_account_id() == self.owner, "only the owner can do this");
     }
 
     fn require_asset(&self, asset: &AccountId) {
