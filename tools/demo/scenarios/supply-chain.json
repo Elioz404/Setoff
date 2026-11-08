@@ -1,0 +1,167 @@
+{
+  "name": "Eight small firms in one supply chain",
+  "token": {
+    "name": "Setoff Test Dollar (testnet, no value)",
+    "symbol": "tUSD",
+    "decimals": 6,
+    "faucetCap": "100000"
+  },
+  "house": {
+    "roundDurationSeconds": 120,
+    "maxReductions": 32,
+    "proposalBondNear": "0.1",
+    "rewardBps": 10,
+    "rewardPool": "50"
+  },
+  "funding": {
+    "houseNear": "4",
+    "tokenNear": "3",
+    "firmNear": "0.5",
+    "solverNear": "0.5",
+    "storageDepositNear": "0.01"
+  },
+  "firms": [
+    {
+      "id": "molino",
+      "name": "Molino Andino",
+      "trade": "flour mill"
+    },
+    {
+      "id": "panaderia",
+      "name": "Panaderia Sol",
+      "trade": "bakery"
+    },
+    {
+      "id": "granja",
+      "name": "Granja La Esperanza",
+      "trade": "wheat farm"
+    },
+    {
+      "id": "transportes",
+      "name": "Transportes Ruta 5",
+      "trade": "haulage"
+    },
+    {
+      "id": "empaques",
+      "name": "Empaques del Sur",
+      "trade": "packaging"
+    },
+    {
+      "id": "imprenta",
+      "name": "Imprenta Lux",
+      "trade": "label printer"
+    },
+    {
+      "id": "cafe",
+      "name": "Cafe Central",
+      "trade": "cafe chain"
+    },
+    {
+      "id": "distribuidora",
+      "name": "Distribuidora Norte",
+      "trade": "wholesaler"
+    }
+  ],
+  "solvers": [
+    {
+      "id": "solver-greedy",
+      "strategy": "greedy"
+    },
+    {
+      "id": "solver-optimal",
+      "strategy": "optimal"
+    }
+  ],
+  "obligations": [
+    {
+      "debtor": "panaderia",
+      "creditor": "molino",
+      "amount": "12000",
+      "reference": "F-1031 flour, October"
+    },
+    {
+      "debtor": "molino",
+      "creditor": "granja",
+      "amount": "9000",
+      "reference": "F-0877 wheat, harvest lot 4"
+    },
+    {
+      "debtor": "granja",
+      "creditor": "transportes",
+      "amount": "4500",
+      "reference": "F-2210 freight, September"
+    },
+    {
+      "debtor": "transportes",
+      "creditor": "empaques",
+      "amount": "3000",
+      "reference": "F-0412 pallets"
+    },
+    {
+      "debtor": "empaques",
+      "creditor": "imprenta",
+      "amount": "2500",
+      "reference": "F-1189 labels"
+    },
+    {
+      "debtor": "imprenta",
+      "creditor": "cafe",
+      "amount": "2400",
+      "reference": "F-0093 catering"
+    },
+    {
+      "debtor": "cafe",
+      "creditor": "panaderia",
+      "amount": "5000",
+      "reference": "F-3301 bread, October"
+    },
+    {
+      "debtor": "cafe",
+      "creditor": "distribuidora",
+      "amount": "2500",
+      "reference": "F-5520 supplies"
+    },
+    {
+      "debtor": "distribuidora",
+      "creditor": "panaderia",
+      "amount": "7000",
+      "reference": "F-3302 bread for resale"
+    },
+    {
+      "debtor": "molino",
+      "creditor": "transportes",
+      "amount": "3000",
+      "reference": "F-2215 freight, October"
+    },
+    {
+      "debtor": "transportes",
+      "creditor": "distribuidora",
+      "amount": "4000",
+      "reference": "F-5530 spare parts"
+    },
+    {
+      "debtor": "granja",
+      "creditor": "empaques",
+      "amount": "1200",
+      "reference": "F-0420 crates"
+    },
+    {
+      "debtor": "panaderia",
+      "creditor": "empaques",
+      "amount": "2000",
+      "reference": "F-0425 bags"
+    },
+    {
+      "debtor": "empaques",
+      "creditor": "transportes",
+      "amount": "2500",
+      "reference": "F-2220 deliveries"
+    },
+    {
+      "debtor": "distribuidora",
+      "creditor": "molino",
+      "amount": "3000",
+      "reference": "F-1040 flour for resale"
+    }
+  ]
+}

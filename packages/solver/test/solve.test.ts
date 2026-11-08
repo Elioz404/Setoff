@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { decompose, isBalanced, liquidityNeeded, maximumCirculation, solve, type Debt } from "../src/index.ts";
+import { decompose, isBalanced, liquidityNeeded, maximumCirculation, solve, solveGreedy, type Debt } from "../src/index.ts";
 
 const debt = (id: number, debtor: string, creditor: string, outstanding: bigint): Debt => ({
   id: String(id),
@@ -126,5 +126,23 @@ describe("isBalanced", () => {
 describe("liquidityNeeded", () => {
   it("is what net debtors owe", () => {
     assert.equal(liquidityNeeded([debt(0, "a", "b", 100n), debt(1, "b", "c", 80n), debt(2, "c", "a", 60n)]), 40n);
+  });
+});
+
+describe("solveGreedy", () => {
+  it("falls into the trap the optimal solver avoids", () => {
+    const debts = [debt(0, "a", "b", 10n), debt(1, "b", "a", 5n), debt(2, "b", "c", 10n), debt(3, "c", "a", 10n)];
+    const greedy = solveGreedy(debts, limits);
+    assert.ok(isBalanced(debts, greedy.reductions));
+    assert.equal(greedy.cleared, 25n);
+  });
+
+  it("is always valid and never beats the optimum", () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      const debts = randomBook(seed);
+      const greedy = solveGreedy(debts, limits);
+      if (greedy.cleared > 0n) assert.ok(isBalanced(debts, greedy.reductions), `seed ${seed}`);
+      assert.ok(greedy.cleared <= solve(debts, limits).cleared, `seed ${seed}`);
+    }
   });
 });

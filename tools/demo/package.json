@@ -1,0 +1,16 @@
+{
+  "name": "@setoff/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/main.ts",
+    "typecheck": "tsc -p .",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@setoff/house-client": "0.1.0",
+    "@setoff/solver": "0.1.0",
+    "near-api-js": "^7.4.0"
+  }
+}
