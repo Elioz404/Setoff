@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/setoff-core", "contracts/clearing-house", "contracts/test-token"]
+members = ["crates/setoff-core", "contracts/clearing-house", "contracts/test-token", "contracts/sandbox-tests"]
+# The sandbox tests need the built wasm and a local NEAR node, so `cargo test`
+# leaves them out; CI runs them after building the contracts.
+default-members = ["crates/setoff-core", "contracts/clearing-house", "contracts/test-token"]
 
 [workspace.package]
 version = "0.1.0"

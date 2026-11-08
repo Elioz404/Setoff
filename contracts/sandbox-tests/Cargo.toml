@@ -1,0 +1,16 @@
+[package]
+name = "setoff-sandbox-tests"
+description = "End-to-end tests of the clearing house and the test token on a local NEAR sandbox"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dev-dependencies]
+near-workspaces = { version = "0.24", default-features = false, features = ["install"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+anyhow = "1"
+
+[lints]
+workspace = true

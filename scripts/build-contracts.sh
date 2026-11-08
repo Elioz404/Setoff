@@ -5,7 +5,7 @@
 # callers see the contract's message instead of a bare wasm trap.
 set -eu
 cd "$(dirname "$0")/.."
-docker run --rm -v "$PWD:/work" -w /work rust:1.99.1 sh -c '
+docker run --rm -v "$PWD:/work" -w /work rust:1.99.1 sh -ec '
   RUSTFLAGS="-C target-cpu=mvp -C link-arg=-s --cfg near" cargo build --release --locked \
     --target wasm32-unknown-unknown --target-dir /tmp/build \
     -p setoff-clearing-house -p setoff-test-token

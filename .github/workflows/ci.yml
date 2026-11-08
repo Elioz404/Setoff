@@ -20,6 +20,10 @@ jobs:
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
       - run: RUSTFLAGS="-C target-cpu=mvp -C link-arg=-s --cfg near" cargo build --release --locked --target wasm32-unknown-unknown -p setoff-clearing-house -p setoff-test-token
+      - run: cargo clippy -p setoff-sandbox-tests --all-targets --locked -- -D warnings
+      - run: cargo test -p setoff-sandbox-tests --locked
+        env:
+          SETOFF_WASM_DIR: target/wasm32-unknown-unknown/release
 
   typescript:
     runs-on: ubuntu-latest
