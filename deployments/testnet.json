@@ -1,0 +1,94 @@
+{
+  "network": "testnet",
+  "rpcUrl": "https://test.rpc.fastnear.com",
+  "scenario": "Eight small firms in one supply chain",
+  "house": "house.setoff-demo.testnet",
+  "token": {
+    "account": "tusd.setoff-demo.testnet",
+    "symbol": "tUSD",
+    "decimals": 6
+  },
+  "firms": [
+    {
+      "id": "molino",
+      "name": "Molino Andino",
+      "trade": "flour mill",
+      "account": "molino.setoff-demo.testnet"
+    },
+    {
+      "id": "panaderia",
+      "name": "Panaderia Sol",
+      "trade": "bakery",
+      "account": "panaderia.setoff-demo.testnet"
+    },
+    {
+      "id": "granja",
+      "name": "Granja La Esperanza",
+      "trade": "wheat farm",
+      "account": "granja.setoff-demo.testnet"
+    },
+    {
+      "id": "transportes",
+      "name": "Transportes Ruta 5",
+      "trade": "haulage",
+      "account": "transportes.setoff-demo.testnet"
+    },
+    {
+      "id": "empaques",
+      "name": "Empaques del Sur",
+      "trade": "packaging",
+      "account": "empaques.setoff-demo.testnet"
+    },
+    {
+      "id": "imprenta",
+      "name": "Imprenta Lux",
+      "trade": "label printer",
+      "account": "imprenta.setoff-demo.testnet"
+    },
+    {
+      "id": "cafe",
+      "name": "Cafe Central",
+      "trade": "cafe chain",
+      "account": "cafe.setoff-demo.testnet"
+    },
+    {
+      "id": "distribuidora",
+      "name": "Distribuidora Norte",
+      "trade": "wholesaler",
+      "account": "distribuidora.setoff-demo.testnet"
+    }
+  ],
+  "solvers": [
+    {
+      "id": "solver-greedy",
+      "strategy": "greedy",
+      "account": "solver-greedy.setoff-demo.testnet"
+    },
+    {
+      "id": "solver-optimal",
+      "strategy": "optimal",
+      "account": "solver-optimal.setoff-demo.testnet"
+    }
+  ],
+  "codeHashes": {
+    "house": "6iKSEgVwfn5kBoL1mgLpZFLppg9k7RnTe7WYmSjaKb7X",
+    "token": "88umVdbGU34WL6K6TmwWPXhrVoDrQbrsaDouugqzp2qn"
+  },
+  "obligations": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+  ]
+}

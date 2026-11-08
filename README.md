@@ -63,7 +63,7 @@ These figures are asserted by `tools/demo/test/demo.test.ts`.
 
 ### On testnet
 
-You need a funded testnet account (about 15 testnet NEAR, free from a faucet) and its key in the near-cli format, usually
+You need a funded testnet account (10 testnet NEAR is enough; `near account create-account sponsor-by-faucet-service` creates one) and its key in the near-cli format, usually
 `~/.near-credentials/testnet/<account>.json`. The tool refuses to run unless the account ends in `.testnet` and the RPC is
 not mainnet.
 
@@ -86,6 +86,20 @@ not mainnet.
    then the totals: 40,900 tUSD cleared by set-off, 22,700 paid, nothing owed.
 
 `npm run demo -- report` prints the totals at any time.
+
+## Deployed on testnet
+
+| What | Account |
+| --- | --- |
+| Clearing house | [`house.setoff-demo.testnet`](https://testnet.nearblocks.io/address/house.setoff-demo.testnet) |
+| Test token (tUSD, no value) | [`tusd.setoff-demo.testnet`](https://testnet.nearblocks.io/address/tusd.setoff-demo.testnet) |
+| Firms | `molino.setoff-demo.testnet`, `panaderia.setoff-demo.testnet`, `granja.setoff-demo.testnet`, `transportes.setoff-demo.testnet`, `empaques.setoff-demo.testnet`, `imprenta.setoff-demo.testnet`, `cafe.setoff-demo.testnet`, `distribuidora.setoff-demo.testnet` |
+| Solvers | `solver-greedy.setoff-demo.testnet` (greedy), `solver-optimal.setoff-demo.testnet` (optimal) |
+
+The code on both contracts is the wasm `scripts/build-contracts.sh` builds: its base58 SHA-256 is
+`6iKSEgVwfn5kBoL1mgLpZFLppg9k7RnTe7WYmSjaKb7X` for the house and `88umVdbGU34WL6K6TmwWPXhrVoDrQbrsaDouugqzp2qn` for the token, which is what
+`near account view-account-summary <account> network-config testnet now` reports as the code hash. The full list is in
+`deployments/testnet.json`, which the page reads.
 
 ## Checking the claims
 

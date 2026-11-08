@@ -52,6 +52,10 @@ function LiveView({ deployment, state, error }: { readonly deployment: Deploymen
     () => state.obligations.filter((o) => o.asset === deployment.token.account && accepted.has(o.status)),
     [state.obligations, deployment.token.account],
   );
+  const paid = useMemo(
+    () => obligations.reduce((sum, o) => sum + BigInt(o.amount) - BigInt(o.cleared) - BigInt(o.outstanding), 0n),
+    [obligations],
+  );
   const best = state.round.best;
   const book = useMemo(() => {
     const pending = new Map(preview && best ? best.reductions.map((r) => [r.obligation, BigInt(r.amount)]) : []);
@@ -72,8 +76,9 @@ function LiveView({ deployment, state, error }: { readonly deployment: Deploymen
       <div className="live-grid">
         <figure className="stage">
           <DebtGraph book={book} cleared label={label} decimals={decimals} symbol={symbol} />
+          <figcaption>Green is what set-off cancelled; dark is what had to be paid in {symbol}.</figcaption>
         </figure>
-        <Figures totals={totalsOf(book)} decimals={decimals} symbol={symbol} />
+        <Figures totals={totalsOf(book)} decimals={decimals} symbol={symbol} paid={paid} />
       </div>
       <Ledger book={book} label={label} decimals={decimals} caption={`${obligations.length} accepted invoices on ${deployment.network}`} />
     </>

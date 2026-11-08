@@ -14,10 +14,10 @@
     "rewardPool": "50"
   },
   "funding": {
-    "houseNear": "4",
-    "tokenNear": "3",
-    "firmNear": "0.5",
-    "solverNear": "0.5",
+    "houseNear": "3.7",
+    "tokenNear": "2.4",
+    "firmNear": "0.25",
+    "solverNear": "0.3",
     "storageDepositNear": "0.01"
   },
   "firms": [
