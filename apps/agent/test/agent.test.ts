@@ -68,6 +68,15 @@ describe("loadConfig", () => {
     assert.throws(() => loadConfig({ ...env, SETOFF_CONTRACT: "" }), new ConfigError("SETOFF_CONTRACT is not set"));
   });
 
+  it("reads the key from a near-cli key file for the same account", () => {
+    const { SOLVER_PRIVATE_KEY: key, ...rest } = env;
+    const file = JSON.stringify({ account_id: "solver.testnet", private_key: key });
+    assert.equal(loadConfig({ ...rest, SOLVER_KEY_FILE: "k.json" }, () => file).privateKey, key);
+    const other = JSON.stringify({ account_id: "someone.testnet", private_key: key });
+    assert.throws(() => loadConfig({ ...rest, SOLVER_KEY_FILE: "k.json" }, () => other), /not the key of solver.testnet/);
+    assert.throws(() => loadConfig(rest), new ConfigError("set SOLVER_KEY_FILE or SOLVER_PRIVATE_KEY"));
+  });
+
   it("refuses a malformed key and unknown strategies", () => {
     assert.throws(() => loadConfig({ ...env, SOLVER_PRIVATE_KEY: "hunter2" }), ConfigError);
     assert.throws(() => loadConfig({ ...env, SOLVER_STRATEGY: "random" }), ConfigError);

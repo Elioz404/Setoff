@@ -2,6 +2,10 @@
   "name": "setoff",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Elioz404/Setoff"
+  },
   "workspaces": [
     "packages/*",
     "apps/*",
@@ -10,7 +14,10 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "demo": "npm run demo -w @setoff/demo --",
+    "agent": "npm start -w @setoff/agent",
+    "web": "npm run dev -w @setoff/web"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
