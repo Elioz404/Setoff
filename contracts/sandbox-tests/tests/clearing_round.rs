@@ -40,7 +40,11 @@ async fn setup() -> anyhow::Result<Setup> {
     let token = worker.dev_deploy(&wasm("setoff_test_token.wasm")).await?;
     let house = worker.dev_deploy(&wasm("setoff_clearing_house.wasm")).await?;
     let owner = worker.dev_create_account().await?;
-    let firms = [worker.dev_create_account().await?, worker.dev_create_account().await?, worker.dev_create_account().await?];
+    let firms = [
+        worker.dev_create_account().await?,
+        worker.dev_create_account().await?,
+        worker.dev_create_account().await?,
+    ];
 
     token
         .call("new")
@@ -69,7 +73,11 @@ async fn setup() -> anyhow::Result<Setup> {
     register(&owner, &token, house.id().as_str()).await?;
     for firm in &firms {
         register(&owner, &token, firm.id().as_str()).await?;
-        firm.call(token.id(), "faucet").args_json(json!({ "amount": "1000" })).transact().await?.into_result()?;
+        firm.call(token.id(), "faucet")
+            .args_json(json!({ "amount": "1000" }))
+            .transact()
+            .await?
+            .into_result()?;
     }
     Ok(Setup { worker, token, house, owner, firms })
 }
@@ -94,7 +102,13 @@ async fn owe(s: &Setup, debtor: usize, creditor: usize, amount: u64) -> anyhow::
         .transact()
         .await?
         .json()?;
-    s.firms[debtor].call(s.house.id(), "accept").args_json(json!({ "id": id })).deposit(STORAGE).transact().await?.into_result()?;
+    s.firms[debtor]
+        .call(s.house.id(), "accept")
+        .args_json(json!({ "id": id }))
+        .deposit(STORAGE)
+        .transact()
+        .await?
+        .into_result()?;
     Ok(id)
 }
 
@@ -113,7 +127,8 @@ async fn pay(s: &Setup, payer: usize, obligation: &str, amount: u64) -> anyhow::
 }
 
 async fn token_balance(s: &Setup, account: &Account) -> anyhow::Result<u64> {
-    let balance: String = s.token.view("ft_balance_of").args_json(json!({ "account_id": account.id() })).await?.json()?;
+    let balance: String =
+        s.token.view("ft_balance_of").args_json(json!({ "account_id": account.id() })).await?.json()?;
     Ok(balance.parse()?)
 }
 
@@ -123,7 +138,9 @@ async fn outstanding(s: &Setup, id: &str) -> anyhow::Result<u64> {
 }
 
 fn reductions(lines: &[(&str, u64)]) -> Value {
-    Value::Array(lines.iter().map(|(id, amount)| json!({ "obligation": id, "amount": amount.to_string() })).collect())
+    Value::Array(
+        lines.iter().map(|(id, amount)| json!({ "obligation": id, "amount": amount.to_string() })).collect(),
+    )
 }
 
 fn logs_contain(result: &ExecutionFinalResult, needle: &str) -> bool {
@@ -140,7 +157,9 @@ async fn a_round_clears_the_cycle_and_the_rest_is_paid_in_tokens() -> anyhow::Re
     let [weak, strong] = [s.worker.dev_create_account().await?, s.worker.dev_create_account().await?];
 
     weak.call(s.house.id(), "submit")
-        .args_json(json!({ "asset": s.token.id(), "reductions": reductions(&[(&ab, 10), (&bc, 10), (&ca, 10)]) }))
+        .args_json(
+            json!({ "asset": s.token.id(), "reductions": reductions(&[(&ab, 10), (&bc, 10), (&ca, 10)]) }),
+        )
         .deposit(BOND)
         .gas(GAS)
         .transact()
@@ -148,7 +167,9 @@ async fn a_round_clears_the_cycle_and_the_rest_is_paid_in_tokens() -> anyhow::Re
         .into_result()?;
     let outbid = strong
         .call(s.house.id(), "submit")
-        .args_json(json!({ "asset": s.token.id(), "reductions": reductions(&[(&ab, 60), (&bc, 60), (&ca, 60)]) }))
+        .args_json(
+            json!({ "asset": s.token.id(), "reductions": reductions(&[(&ab, 60), (&bc, 60), (&ca, 60)]) }),
+        )
         .deposit(BOND)
         .gas(GAS)
         .transact()
@@ -159,7 +180,10 @@ async fn a_round_clears_the_cycle_and_the_rest_is_paid_in_tokens() -> anyhow::Re
     // A line under proposal cannot be paid: the house refuses, the token refunds.
     let before = token_balance(&s, &s.firms[2]).await?;
     let locked = pay(&s, 2, &ca, 1).await?;
-    assert!(locked.receipt_failures().iter().any(|f| format!("{f:?}").contains("best proposal")), "{locked:?}");
+    assert!(
+        locked.receipt_failures().iter().any(|f| format!("{f:?}").contains("best proposal")),
+        "{locked:?}"
+    );
     assert_eq!(token_balance(&s, &s.firms[2]).await?, before);
 
     s.worker.fast_forward(5).await?;
@@ -170,7 +194,10 @@ async fn a_round_clears_the_cycle_and_the_rest_is_paid_in_tokens() -> anyhow::Re
         .transact()
         .await?
         .into_result()?;
-    assert_eq!([outstanding(&s, &ab).await?, outstanding(&s, &bc).await?, outstanding(&s, &ca).await?], [40, 20, 0]);
+    assert_eq!(
+        [outstanding(&s, &ab).await?, outstanding(&s, &bc).await?, outstanding(&s, &ca).await?],
+        [40, 20, 0]
+    );
 
     assert!(pay(&s, 0, &ab, 50).await?.is_success());
     assert!(pay(&s, 1, &bc, 20).await?.is_success());
@@ -206,12 +233,20 @@ async fn a_failed_withdrawal_leaves_the_balance_in_the_house() -> anyhow::Result
     // The outsider is a member but not registered with the token.
     let id: String = outsider
         .call(s.house.id(), "issue")
-        .args_json(json!({ "debtor": s.firms[0].id(), "asset": s.token.id(), "amount": "30", "reference": "" }))
+        .args_json(
+            json!({ "debtor": s.firms[0].id(), "asset": s.token.id(), "amount": "30", "reference": "" }),
+        )
         .deposit(STORAGE)
         .transact()
         .await?
         .json()?;
-    s.firms[0].call(s.house.id(), "accept").args_json(json!({ "id": id })).deposit(STORAGE).transact().await?.into_result()?;
+    s.firms[0]
+        .call(s.house.id(), "accept")
+        .args_json(json!({ "id": id }))
+        .deposit(STORAGE)
+        .transact()
+        .await?
+        .into_result()?;
     assert!(pay(&s, 0, &id, 30).await?.is_success());
 
     let withdrawal = outsider
@@ -222,8 +257,12 @@ async fn a_failed_withdrawal_leaves_the_balance_in_the_house() -> anyhow::Result
         .transact()
         .await?;
     assert!(logs_contain(&withdrawal, r#""event":"withdrawal_failed""#), "{withdrawal:?}");
-    let balance: String =
-        s.house.view("get_balance").args_json(json!({ "account": outsider.id(), "asset": s.token.id() })).await?.json()?;
+    let balance: String = s
+        .house
+        .view("get_balance")
+        .args_json(json!({ "account": outsider.id(), "asset": s.token.id() }))
+        .await?
+        .json()?;
     assert_eq!(balance, "30");
     Ok(())
 }
@@ -234,7 +273,9 @@ async fn refusals_reach_the_caller_with_their_reason() -> anyhow::Result<()> {
     let stranger = s.worker.dev_create_account().await?;
     let refused = stranger
         .call(s.house.id(), "issue")
-        .args_json(json!({ "debtor": s.firms[0].id(), "asset": s.token.id(), "amount": "1", "reference": "" }))
+        .args_json(
+            json!({ "debtor": s.firms[0].id(), "asset": s.token.id(), "amount": "1", "reference": "" }),
+        )
         .deposit(STORAGE)
         .transact()
         .await?;
