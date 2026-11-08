@@ -1,0 +1,20 @@
+[package]
+name = "setoff-test-token"
+description = "NEP-141 token with an open faucet, for trying Setoff on testnet without real money"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+near-contract-standards.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }
+
+[lints]
+workspace = true

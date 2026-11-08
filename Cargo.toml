@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/setoff-core", "contracts/clearing-house"]
+members = ["crates/setoff-core", "contracts/clearing-house", "contracts/test-token"]
 
 [workspace.package]
 version = "0.1.0"
