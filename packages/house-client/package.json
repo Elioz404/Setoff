@@ -1,0 +1,18 @@
+{
+  "name": "@setoff/house-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./writer": "./src/writer.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@setoff/solver": "0.1.0",
+    "near-api-js": "^7.4.0"
+  }
+}
