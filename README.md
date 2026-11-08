@@ -51,12 +51,13 @@ Requirements: Node 22 or later, Docker (to build and test the Rust code without 
 
 ### In the browser, with no account
 
-1. Run `npm ci`, then `npm run web`.
-2. Open the address Vite prints and choose **Simulator**. You see eight firms of one supply chain and 15 accepted
-   invoices worth 63,600 tUSD.
-3. Press **Clear**. The optimal solver cancels 40,900 tUSD (64.3%) and 22,700 tUSD is left to pay.
-4. Choose **Greedy solver** and press **Clear** again: it cancels 38,500 tUSD, 2,400 less, which is why the optimal solver
-   outbids it on chain.
+1. Run `npm ci`, then `npm run web`, and open the address Vite prints.
+2. The first screen shows eight firms of one supply chain and 15 accepted invoices worth 63,600 tUSD, with each firm's
+   net position.
+3. Press **Clear the debts**. The cancelled part of each invoice turns green: 40,900 tUSD (64.3%) is cancelled, 22,700
+   tUSD is left to pay, and no net position changes.
+4. Scroll to **Solvers compete for each round**: a greedy solver cancels 38,500 tUSD on the same invoices, 2,400 less,
+   which is why the optimal solver outbids it on chain. **Every invoice, before and after** lists the clearing line by line.
 
 These figures are asserted by `tools/demo/test/demo.test.ts`.
 
@@ -79,7 +80,7 @@ not mainnet.
 
    and the same with `solver-optimal` and `SOLVER_STRATEGY=optimal`. You see the greedy solver submit 38,500 tUSD, the
    optimal one outbid it with 40,900, and, two minutes later, one of them close the round.
-4. Run `npm run web` and choose **Live on testnet**: the graph, the round and the solver ranking are read from the
+4. Run `npm run web` and open **Live on testnet**: the graph, the round and the solver ranking are read from the
    contract every five seconds.
 5. Pay what is left: `SETOFF_ROOT_ACCOUNT=<you>.testnet npm run demo -- settle`. You see each payment and withdrawal,
    then the totals: 40,900 tUSD cleared by set-off, 22,700 paid, nothing owed.
@@ -123,7 +124,7 @@ npm ci && npm run typecheck && npm test
 | `packages/solver` | Maximum-circulation solver (negative-cycle cancelling), a greedy solver, cycle decomposition | nothing |
 | `packages/house-client` | Typed views over JSON-RPC (browser and Node) and a signing writer (Node only) | `solver`, near-api-js |
 | `apps/agent` | A solver agent: reads, solves, submits or closes the round, in a loop | `house-client`, `solver` |
-| `apps/web` | Static page: simulator and live view | `house-client`, `solver` |
+| `apps/web` | Static page: the demo clearing, the solver comparison and, once deployed, the live house | `house-client`, `solver` |
 | `tools/demo` | Creates and settles the testnet scenario | `house-client`, `solver`, near-api-js |
 
 ## Security notes
@@ -158,7 +159,7 @@ projects share no code and are independent.
 
 ## Credits
 
-Built with near-sdk, near-contract-standards, near-api-js, React and Vite. Written with help from an AI coding assistant.
+Built with near-sdk, near-contract-standards, near-api-js, React and Vite; type is Newsreader and IBM Plex Sans, self-hosted through Fontsource. Written with help from an AI coding assistant.
 
 ## License
 

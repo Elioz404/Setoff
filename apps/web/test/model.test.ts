@@ -5,6 +5,8 @@ import { solve } from "@setoff/solver";
 
 import { bookFrom, netPositions, totalsOf, type Entry } from "../src/model/book.ts";
 import { circleLayout, curvedEdge, strokeWidth } from "../src/model/layout.ts";
+import { scenarioModel } from "../src/model/scenarioModel.ts";
+import { scenario } from "./scenario.fixture.ts";
 
 const entries: Entry[] = [
   { id: "0", debtor: "a", creditor: "b", amount: 100n, reference: "" },
@@ -45,5 +47,16 @@ describe("layout", () => {
     assert.equal(strokeWidth(0n, 100n), 0);
     assert.equal(strokeWidth(100n, 100n), 12);
     assert.ok(strokeWidth(25n, 100n) < strokeWidth(100n, 100n) / 2 + 1.5);
+  });
+});
+
+describe("scenario model", () => {
+  it("clears the demo scenario as the README says", () => {
+    const model = scenarioModel(scenario);
+    const totals = totalsOf(model.book);
+    assert.equal(totals.gross, 63_600_000_000n);
+    assert.equal(totals.cleared, 40_900_000_000n);
+    assert.equal(model.greedy.cleared, 38_500_000_000n);
+    assert.deepEqual(netPositions(model.book, "after"), netPositions(model.book, "before"));
   });
 });
