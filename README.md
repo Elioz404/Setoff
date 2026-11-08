@@ -116,9 +116,13 @@ several endpoints, separated by commas; by default it uses FastNEAR and then rpc
 | Solvers | `solver-greedy.setoff.testnet` (greedy), `solver-optimal.setoff.testnet` (optimal) |
 
 The code on both contracts is the wasm `scripts/build-contracts.sh` builds. `npm run demo -- hashes` prints
-`6AXb24nQhZuQwgVrQ41h5cvQnj421j5FLJFsRDjJdaoE` for the house and `BJo5QGyLZz2RASjkuP5fhmmMJY7Nz91mPSBiVPaNbE2M` for the token, which is the
+`8Em7Cz496rGSv4LNUcfVzurGuHrJjYempmGL7bEztAZA` for the house and `BJo5QGyLZz2RASjkuP5fhmmMJY7Nz91mPSBiVPaNbE2M` for the token, which is the
 `code_hash` NEAR reports for each account (`near account view-account-summary <account> network-config testnet now`).
 The full list is in `deployments/testnet.json`, which the page reads.
+
+Both accounts still hold the full-access key they were deployed with, so for now the deployer could replace their code.
+`npm run demo -- lock` lists those keys and `npm run demo -- lock --confirm` deletes them for good, after which nobody can
+change the contracts or their configuration.
 
 ## Checking the claims
 
@@ -139,6 +143,9 @@ The full list is in `deployments/testnet.json`, which the page reads.
 | The optimal solver beats greedy cycle cancelling where cycles share an invoice | `beats the greedy choice when cycles share a debt` |
 | The agent never sends a proposal the contract would refuse | `apps/agent/test/agent.test.ts` |
 | The scenario figures quoted above | `tools/demo/test/demo.test.ts` |
+| The deployed wasm works end to end: a round with an outbid, a refused payment on a line under proposal, close, payment of the rest and withdrawal; a failed withdrawal that keeps the balance; refusals that name their reason | `contracts/sandbox-tests/tests/clearing_round.rs`, on a local NEAR sandbox |
+| The owner's role can move to another account (a DAO), and the old owner loses it | `ownership_moves_to_a_new_account`, `the_previous_owner_loses_its_role` |
+| A bond refund that cannot be delivered is recorded | `a_failed_bond_refund_is_on_the_record` |
 | The wasm is reproducible | `scripts/build-contracts.sh` then `npm run demo -- hashes`; compare with `codeHashes` in `deployments/testnet.json` and with `code_hash` of the deployed accounts |
 
 Run everything:
@@ -151,6 +158,15 @@ docker run --rm -v "$PWD:/work" -w /work rust:1.99.1 sh -c "cargo fmt --check &&
 npm ci && npm run typecheck && npm test
 ```
 
+The sandbox tests run the built wasm on a local NEAR node (downloaded on first run):
+
+```sh
+sh scripts/build-contracts.sh
+docker run --rm -v "$PWD:/work" -w /work -e SETOFF_WASM_DIR=target/wasm32-unknown-unknown/release rust:1.99.1 cargo test -p setoff-sandbox-tests --locked
+```
+
+On Windows Git Bash, prefix the `docker` commands with `MSYS_NO_PATHCONV=1` and use `"$(pwd -W)"` for `$PWD`.
+
 ## Layout
 
 | Path | What it is | Depends on |
@@ -158,19 +174,22 @@ npm ci && npm run typecheck && npm test
 | `crates/setoff-core` | The set-off rule and payment arithmetic, with no blockchain code | nothing |
 | `contracts/clearing-house` | The NEAR contract: obligations, rounds, payments, withdrawals, events, views | `setoff-core`, near-sdk |
 | `contracts/test-token` | NEP-141 token with a capped open faucet, for testnet only | near-sdk |
+| `contracts/sandbox-tests` | End-to-end tests of both wasm files on a local NEAR sandbox | near-workspaces |
 | `packages/solver` | Maximum-circulation solver (negative-cycle cancelling), a greedy solver, cycle decomposition | nothing |
 | `packages/house-client` | Typed views over JSON-RPC (browser and Node) and a signing writer (Node only) | `solver`, near-api-js |
 | `apps/agent` | A solver agent: reads, solves, submits or closes the round, in a loop | `house-client`, `solver` |
 | `apps/web` | Static page: the demo clearing, the solver comparison and, once deployed, the live house | `house-client`, `solver` |
-| `tools/demo` | Creates and settles the testnet scenario | `house-client`, `solver`, near-api-js |
+| `tools/demo` | Creates, settles and locks the testnet scenario; prints code hashes | `house-client`, `solver`, near-api-js |
 
 ## Security notes
 
 - **No trusted proposer.** The contract re-checks every proposal when it is submitted and again when the round closes.
 - **Members.** Only members admitted by the owner can issue or accept obligations. Without this, two accounts of the
   same person could issue each other any amount and clear it to drain the reward pool and outbid honest clearings.
-- **Rounds cannot be blocked.** Lines of the best proposal cannot be paid until `close_round`; rounds last at most
-  thirty days by configuration.
+- **Rounds cannot be blocked.** Lines of the best proposal cannot be paid until `close_round`, so a payment cannot make
+  a proposal stale. Rounds last at most one hour, which bounds how long any proposal, honest or not, holds a payment.
+- **Bonds.** The proposal bond must cover the storage of a full proposal and of its winner's records, so the contract
+  never pays a solver's storage. Every bond refund is followed by a `bond_returned` or `bond_return_failed` event.
 - **Readable refusals.** The contracts are built with `--cfg near`, so a refusal reaches the caller as
   `Smart contract panicked: <reason>` instead of a bare wasm trap.
 - **Consent.** Only the debtor can accept an obligation; accepting it is consent to its being paid or set off.
@@ -183,7 +202,9 @@ npm ci && npm run typecheck && npm test
   obligation panics, so the token contract returns it. Withdrawals debit first and restore the balance if the transfer
   fails, and need a 1 yoctoNEAR deposit, so a function-call key alone cannot trigger them.
 - **Keys.** The agent and the demo tool read keys from the environment or from key files outside the repository.
-- **Configuration is fixed.** Round length, proposal size, bond and reward rate are set at deployment and cannot change.
+- **Configuration.** Round length, proposal size, bond and reward rate are set at deployment; the contract has no
+  method to change them. Only replacing the code could, which `npm run demo -- lock --confirm` rules out by deleting the
+  accounts' full-access keys. The owner's role can be handed to a DAO with `transfer_ownership`.
 
 ## Limits
 
@@ -198,6 +219,10 @@ npm ci && npm run typecheck && npm test
 - When the best clearing touches more invoices than `max_reductions`, the solver keeps whole cycles, largest first, and
   reports the result as not optimal.
 - Obligations are kept as history once settled; their storage is not released.
+- `list_active` filters every active obligation by token on each call, which is fine for thousands of obligations but
+  would need a per-token index at a larger scale.
+- A solver can hold up payment of the lines it proposes for at most one round (one hour at most), even with a tiny
+  clearing; any better proposal replaces it.
 - Every firm needs a NEAR account with a little NEAR for gas. Meta transactions would remove that; this version does
   not have them.
 - Testnet only. The test token has an open faucet and must never be deployed to mainnet.

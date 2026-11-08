@@ -6,6 +6,7 @@ import { Chain, codeHash } from "./chain.ts";
 import { readDeployment } from "./deployment.ts";
 import { defaultWasmDir, loadEnvironment, repositoryRoot } from "./environment.ts";
 import { KeyStore, readKeyFile } from "./keys.ts";
+import { lock } from "./lock.ts";
 import { describeTotals, totals } from "./report.ts";
 import { loadScenario } from "./scenario.ts";
 import { settle } from "./settle.ts";
@@ -16,12 +17,13 @@ const usage = `usage: npm run demo -- <command>
   setup   create the accounts, deploy the token and the house, issue and accept the scenario's obligations
   settle  pay every obligation set-off left, then withdraw every firm's balance
   report  print how much debt was cleared, paid and is still owed
-  hashes  print the code hash of each built contract, as NEAR reports it (base58 of the sha256)`;
+  hashes  print the code hash of each built contract, as NEAR reports it (base58 of the sha256)
+  lock    show the full-access keys of the house and the token; with --confirm, delete them for good`;
 
 const log = (message: string) => console.log(message);
 
 async function main(command: string | undefined) {
-  if (command === undefined || !["setup", "settle", "report", "hashes"].includes(command)) {
+  if (command === undefined || !["setup", "settle", "report", "hashes", "lock"].includes(command)) {
     console.error(usage);
     process.exitCode = 2;
     return;
@@ -56,6 +58,10 @@ async function main(command: string | undefined) {
   const deployment = readDeployment(env.deploymentPath);
   if (!deployment) throw new Error(`no deployment at ${env.deploymentPath}: run setup first`);
 
+  if (command === "lock") {
+    await lock(deployment, new Chain(env.rpcUrls), keys, process.argv.includes("--confirm"), log);
+    return;
+  }
   if (command === "settle") {
     await settle(deployment, keys, log);
   }
